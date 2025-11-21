@@ -189,8 +189,8 @@ elif sequence_id > 1:
 
 This project was created by reverse engineering the Android app's native libraries:
 
-- **Source**: LW FPV Android app (version 1.9.2)
-- **Libraries**: `liblewei-3.2.2.so`, `liblewei-2.3.so`, `liblewei63.so`
+- **Source**: HASAKEE FPV Android app (version 1.0.4)
+- **Libraries**: `liblewei-2.3.so`, `liblewei63.so`
 - **Tools**: Ghidra decompiler, Wireshark packet analysis
 - **Protocol**: VGA camera protocol (0x6363) identified at line 15196 in decompiled code
 
