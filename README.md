@@ -129,6 +129,65 @@ send_command(sock, ...)         # Send UDP command to drone
 decode_frame(jpeg_data, ...)    # Display JPEG frame
 ```
 
+### Video Stream Processing
+
+The video stream works through a multi-step process:
+
+1. **Heartbeat Initialization**: App sends `63 63 01 00 00 00 00` every 1 second to drone port 40000
+2. **Packet Reception**: Drone responds with multi-packet video frames (cmd_type=0x03)
+3. **Frame Assembly**: Multiple UDP packets combined using frame_id and sequence_id
+4. **Data Deobfuscation**: Optional decoding applied based on frame_type flag
+5. **JPEG Decoding**: Complete frames decoded and displayed using OpenCV
+
+#### VGA Data Obfuscation
+
+Some VGA cameras use simple obfuscation to protect video data. The `decode_vga_obfuscation()` function handles this:
+
+```python
+def decode_vga_obfuscation(data, frame_id, frame_type):
+    # Only decode if frame_type != 0x02 (most modern cameras use 0x02)
+    if frame_type == 0x02:
+        return data  # No obfuscation
+    
+    # Calculate obfuscation index using XOR operations
+    index = encode_index(frame_id, len(data))
+    
+    # Flip bits at calculated index
+    data[index] = ~data[index] & 0xFF
+    return data
+```
+
+**How it works** (from liblewei-3.2.2.so line 15325-15327):
+- Checks `frame_type` flag at packet offset 7
+- If `frame_type == 0x02`: Data is unobfuscated (modern cameras)
+- If `frame_type != 0x02`: Data has one byte XOR-flipped at calculated index
+- Index calculated using: `encode_index(frame_id, data_length) % data_length`
+- The `encode_index()` function uses XOR operations on frame_id and length
+
+**Note**: The HASAKEE FPV drone uses `frame_type = 0x02` (unobfuscated), so this decoding is typically not needed.
+
+### Frame Assembly Algorithm
+
+```python
+# Detect new frame by frame_id change
+if current_frame_sequence != frame_sequence:
+    # Process completed frame
+    if running_frame:
+        # Apply deobfuscation if needed
+        running_frame = decode_vga_obfuscation(running_frame, frame_id, frame_type)
+        decode_frame(running_frame, frame_count)
+    
+    # Start new frame
+    current_frame_sequence = frame_sequence
+    running_frame = None
+
+# Assemble packets by sequence_id
+if sequence_id == 1 and payload.startswith(JPEG_SOI):
+    running_frame = payload  # First packet with JPEG header
+elif sequence_id > 1:
+    running_frame += payload  # Append subsequent packets
+```
+
 ## Known Issues
 
 1. **Port 50000 Closed**: Status data (telemetry) port appears unavailable on this drone model
