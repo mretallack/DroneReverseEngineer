@@ -89,24 +89,6 @@ Commands: 0x0c=neutral, 0x1c=takeoff, 0x2c=land
 Modes: 0x8c=low speed, 0x84=high speed
 ```
 
-## Project Structure
-
-```
-.
-├── stream_video.py              # Main video streaming application
-├── control.py                   # Control packet sender (experimental)
-├── decode_packet.py             # Packet structure decoder utility
-├── tools/
-│   └── App/
-│       └── project/
-│           ├── liblewei-3.2.2.so.c    # Reversed native library
-│           ├── liblewei-2.3.so.c      # Older library version
-│           ├── udp_processor.py       # Complete protocol implementation
-│           └── README.md              # Detailed protocol documentation
-└── images/
-    └── drone.jpeg               # Drone photo
-```
-
 ## Implementation Details
 
 ### Video Stream Manager
